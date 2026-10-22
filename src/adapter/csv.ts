@@ -1,7 +1,6 @@
-import { InputAdapter, InputEntry } from "./inputadapter";
 import { parse } from "csv-parse";
-import { createReadStream } from "fs";
 import { Readable } from "stream";
+import { InputAdapter, InputEntry } from "./inputadapter";
 
 export class CsvAdapter extends InputAdapter {
     async parseStream<T = Record<string, any>>(stream: Readable, fileName: string = "stream"): Promise<InputEntry<T>[]> {

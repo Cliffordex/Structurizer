@@ -1,32 +1,55 @@
-import { describe, it, expect } from "bun:test";
-import { InputAdapters, autoDetect } from "../";
+import { describe, expect, it } from "bun:test";
 import { Readable } from "stream";
+import { InputAdapters } from "../";
+import { Structurizer } from "../../app";
+import { CsvAdapter } from "../csv";
+import { JSONAdapter } from "../json";
 
 describe("InputAdapters - Auto", () => {
     it("should correctly identify a file with a csv extension", () => {
-        const result = autoDetect("csv");
-        expect(result).toBe("csv");
+        const s = new Structurizer();
+        const adapter = s["getInputAdapter"]("file.csv");
+        expect(adapter).toBeDefined();
+        expect(adapter).toBeInstanceOf(CsvAdapter);
     });
 
     it("should correctly identify a file with a json extension", () => {
-        const result = autoDetect("file.json");
-        expect(result).toBe("json");
+        const s = new Structurizer();
+        const adapter = s["getInputAdapter"]("file.json");
+        expect(adapter).toBeDefined();
+        expect(adapter).toBeInstanceOf(JSONAdapter);
     });
 });
 
 describe("InputAdapters - JSON", () => {
-it("should allow json as a format", () => {
-    expect(Object.keys(InputAdapters)).toContain("json");
-});
-    it("should accept valid json", () => {
+    it("should allow json as a format", () => {
+        expect(Object.keys(InputAdapters)).toContain("json");
+    });
+    it("should accept json arrays", async () => {
         const jsonAdapter = new InputAdapters["json"]();
         expect(jsonAdapter).toBeDefined();
-        jsonAdapter.parseStream(new Readable({
-            read() {
-                this.push('{"key": "value"}');
-                this.push(null);
-            }
-        }), "file.json");
+        const result = await (async () => {
+            return await jsonAdapter.parseStream(new Readable({
+                read() {
+                    this.push('[{"key": "value"}]');
+                    this.push(null);
+                }
+            }), "file.json");
+        })();
+        expect(result).toBeDefined();
+        expect(result.length).toBe(1);
+    });
+    it("should reject non-array json", () => {
+        const jsonAdapter = new InputAdapters["json"]();
+        expect(jsonAdapter).toBeDefined();
+        expect(async () => {
+            await jsonAdapter.parseStream(new Readable({
+                read() {
+                    this.push('{"key": "value"}\n');
+                    this.push(null);
+                }
+            }));
+        }).toThrow();
     });
 });
 
