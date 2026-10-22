@@ -18,3 +18,4 @@ fields:
     type: phone
   email:
     type: email
+    required: true

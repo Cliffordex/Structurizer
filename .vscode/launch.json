@@ -13,7 +13,8 @@
         "example/output.json",
         "example/referrals.csv",
         "example/referrals_missingfields.csv",
-        "example/referrals_missingreqd.csv"
+        "example/referrals_missingreqd.csv",
+        "example/referrals.json"
       ],
       "cwd": "${workspaceFolder}",
       "stopOnEntry": false,

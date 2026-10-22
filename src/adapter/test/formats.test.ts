@@ -8,27 +8,27 @@ describe("InputAdapters - Auto", () => {
         expect(result).toBe("csv");
     });
 
-    // it("should correctly identify a file with a json extension", () => {
-    //     const result = autoDetect("file.json");
-    //     expect(result).toBe("json");
-    // });
+    it("should correctly identify a file with a json extension", () => {
+        const result = autoDetect("file.json");
+        expect(result).toBe("json");
+    });
 });
 
-// describe("InputAdapters - JSON", () => {
-// it("should allow json as a format", () => {
-//     expect(Object.keys(InputAdapters)).toContain("json");
-// });
-//     it("should accept valid json", () => {
-//         const jsonAdapter = new InputAdapters["json"]();
-//         expect(jsonAdapter).toBeDefined();
-//         jsonAdapter.parseStream(new Readable({
-//             read() {
-//                 this.push('{"key": "value"}');
-//                 this.push(null);
-//             }
-//         }), "file.json");
-//     });
-// });
+describe("InputAdapters - JSON", () => {
+it("should allow json as a format", () => {
+    expect(Object.keys(InputAdapters)).toContain("json");
+});
+    it("should accept valid json", () => {
+        const jsonAdapter = new InputAdapters["json"]();
+        expect(jsonAdapter).toBeDefined();
+        jsonAdapter.parseStream(new Readable({
+            read() {
+                this.push('{"key": "value"}');
+                this.push(null);
+            }
+        }), "file.json");
+    });
+});
 
 describe("InputAdapters - CSV", () => {
     it("should allow csv as a format", () => {
