@@ -6,10 +6,18 @@
       "request": "launch",
       "name": "Debug Bun",
       "program": "${workspaceFolder}/src/index.ts",
-      "args": ["-r", "example/referral.rules.yaml", "-o", "example/output.json", "example/referrals.csv"],
+      "args": [
+        "-r",
+        "example/referral.rules.yaml",
+        "-o",
+        "example/output.json",
+        "example/referrals.csv",
+        "example/referrals_missingfields.csv",
+        "example/referrals_missingreqd.csv"
+      ],
       "cwd": "${workspaceFolder}",
       "stopOnEntry": false,
       "watchMode": false
     }
   ]
-}   
+}

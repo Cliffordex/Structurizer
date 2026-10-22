@@ -10,4 +10,11 @@ fields:
   birthday:
     type: date
     required: true
-  
+  signupDate:
+    type: date
+  referredBy:
+    type: string
+  phone:
+    type: phone
+  email:
+    type: email

@@ -1,8 +1,11 @@
-export interface InputEntry {
+import { Readable } from "stream";
+import { createReadStream } from "fs";
+
+export interface InputEntry<T = Record<string, any>> {
     /**
      * The parsed data of the entry.
      */
-    fields: Record<string, string | number>;
+    fields: T;
 
     /**
      * The position of the entry within the file.
@@ -11,5 +14,9 @@ export interface InputEntry {
 }
 
 export abstract class InputAdapter {
-    abstract parseFile(path: string): Promise<InputEntry[]>;
+    abstract parseStream<T = Record<string, any>>(stream: Readable, fileName?: string): Promise<InputEntry<T>[]>;
+    async parseFile<T = Record<string, any>>(fileName: string): Promise<InputEntry<T>[]> {
+        const stream = createReadStream(fileName);
+        return this.parseStream(stream, fileName);
+    };
 }

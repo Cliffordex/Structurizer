@@ -3,6 +3,7 @@ import { CsvAdapter } from "./csv";
 
 // The registry keeps adapter selection in one place, but requires each adapter
 // to have a no-argument constructor.
+// An adapter may be reused for multiple file extensions.
 
 /**
  * A registry of available input adapters keyed by their file extension.

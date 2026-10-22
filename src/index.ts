@@ -13,7 +13,7 @@ if (args.length === 0 || args.includes("--help") || args.includes("-h") || args.
     console.log("  -p, --report <file>        Specify a file to save the processing report");
 } else {
     // Parse options and collect only positional arguments as input files.
-    const options: StructurizerRunOptions = {
+    const options: StructurizerRunOptions & { outputFile?: string, reportFile?: string } = {
         inputFiles: [],
         inputFormat: "auto",
         ruleFile: "rules.yaml"
@@ -32,9 +32,11 @@ if (args.length === 0 || args.includes("--help") || args.includes("-h") || args.
                 break;
             case "-o":
             case "--output":
+                if (args[i + 1] !== undefined) options.outputFile = args[++i];
+                break;
             case "-p":
             case "--report":
-                if (args[i + 1] !== undefined) i++;
+                if (args[i + 1] !== undefined) options.reportFile = args[++i];
                 break;
             default:
                 if (!arg.startsWith("-")) options.inputFiles.push(arg);
@@ -49,5 +51,9 @@ if (args.length === 0 || args.includes("--help") || args.includes("-h") || args.
     Structurizer.run(options)
         .then(responses => {
             console.log(responses);
+            if (options.outputFile) {
+                const fs = require("fs");
+                fs.writeFileSync(options.outputFile, JSON.stringify(responses, null, 2));
+            }
         });
 }
