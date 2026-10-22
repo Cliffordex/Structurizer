@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "bun",
+      "request": "launch",
+      "name": "Debug Bun",
+      "program": "${workspaceFolder}/src/index.ts",
+      "args": ["-r", "example/referral.rules.yaml", "-o", "example/output.json", "example/referrals.csv"],
+      "cwd": "${workspaceFolder}",
+      "stopOnEntry": false,
+      "watchMode": false
+    }
+  ]
+}   

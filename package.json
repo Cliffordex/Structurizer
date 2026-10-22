@@ -5,12 +5,16 @@
     "version": "1.0.0",
     "main": "index.ts",
     "dependencies": {
-        "@types/bun": "^1.4.3",
+        "csv-parse": "^7.0.3",
         "yargs": "^18.2.0",
         "zod": "^4.6.7"
     },
+    "devDependencies": {
+        "@types/bun": "^1.4.3"
+    },
     "scripts": {
         "start": "bun run src/index.ts",
-        "build": "bun build src/index.ts --compile --outfile dist/structurizer"
+        "build": "bun build src/index.ts --compile --outfile dist/structurizer",
+        "test": "bun test"
     }
 }
