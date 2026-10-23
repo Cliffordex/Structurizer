@@ -1,9 +1,7 @@
-import { describe, it } from 'bun:test';
+import { describe } from 'bun:test';
 
-// Convert into consistent internal record representation
-// Call them records, not entries
-// Parse YAML validation rules
-// Vlaidate rule config and reject invalid or unk properties
+// Each of these should be codified into test cases, then moved out into their own respective files.
+
 // Compile rules into an IR
 // Translate IR into Zod validators
 // Validate records against compiled rules
@@ -15,7 +13,7 @@ import { describe, it } from 'bun:test';
 // Quoted fields in csv data should be properly parsed and preserved
 // HTML report when report file parameter set
 // Human readable validation report in the CLI
-// Streams input data into the processor entry-at-a-time if able
+// Streams input data into the processor record-at-a-time if able
 
 
 
@@ -24,9 +22,10 @@ import { describe, it } from 'bun:test';
 // Support additional validation backends
 
 describe('Functional Tests', () => {
-    it('validates identical csv and json records', () => {
-        const csv = 'name,age\nAlice,30\nBob,25';
-        const json = '[{"name":"Alice","age":30},{"name":"Bob","age":25}]';
-        
-    });
+
+
+
+
+
+    // Parse YAML validation rules
 });

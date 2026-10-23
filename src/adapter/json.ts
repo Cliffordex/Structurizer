@@ -1,5 +1,5 @@
+import { getNodeValue, parseTree } from "jsonc-parser";
 import { Readable } from "stream";
-import { parseTree, parse, getNodeValue } from "jsonc-parser";
 import { InputAdapter } from "./inputadapter";
 
 export class JSONAdapter extends InputAdapter {
@@ -18,7 +18,7 @@ export class JSONAdapter extends InputAdapter {
         const result = tree.children?.map((child, index) => {
             return {
                 fields: getNodeValue(child),
-                filePosition: `${fileName}:` + (child.offset ?? `invalid`) + ` (entry ${index + 1})`
+                filePosition: `${fileName}:` + (child.offset ?? `invalid`) + ` (record ${index + 1})`
             };
         }) ?? [];
         return result;

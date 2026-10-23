@@ -1,5 +1,5 @@
 import { autoDetect, InputAdapters } from "./adapter";
-import { InputAdapter, InputEntry } from "./adapter/inputadapter";
+import { InputAdapter, InputRecord } from "./adapter/inputadapter";
 import { RuleSet } from "./validationrules/ruleset";
 
 export type StructurizerRunOptions = {
@@ -8,7 +8,12 @@ export type StructurizerRunOptions = {
     ruleFile: string;
 };
 
-type BaseValidationResponse = {
+type BaseValidationResult = {
+    /**
+     * The name of the file being validated.
+     */
+    filename: string;
+
     /**
     * The statistics of the validation process.
     * 
@@ -16,21 +21,21 @@ type BaseValidationResponse = {
     */
     stats?: {
         /**
-         * The total number of entries processed.
+         * The total number of records processed.
          */
-        totalEntries: number;
+        total: number;
         /**
-         * The number of valid entries.
+         * The number of valid records.
          */
-        validEntries: number;
+        valid: number;
         /**
-         * The number of entries which failed validation and have no valid data.
+         * The number of records which failed validation and have no valid data.
          */
-        invalidEntries: number;
+        invalid: number;
     };
 
     /**
-     * The validation errors for this entry.
+     * The validation errors for this record.
      */
     errors?: string[];
 
@@ -40,7 +45,7 @@ type BaseValidationResponse = {
     step: string;
 }
 
-type SuccessfulValidationResponse = {
+export type SuccessfulValidationResult = {
     /**
      * Indicates if any of the validation steps were successful.
      */
@@ -51,17 +56,17 @@ type SuccessfulValidationResponse = {
      * This may be casted to the output type specified by the rule file contract.
      */
     output: object;
-} & BaseValidationResponse;
-type FailedValidationResponse = {
+} & BaseValidationResult;
+export type FailedValidationResult = {
     /**
      * Indicates that the validation process failed.
      */
     success: false;
 
     errors: string[];
-} & BaseValidationResponse;
+} & BaseValidationResult;
 
-export type ValidationResponse = SuccessfulValidationResponse | FailedValidationResponse;
+export type ValidationResult = SuccessfulValidationResult | FailedValidationResult;
 
 export class Structurizer {
 
@@ -95,6 +100,10 @@ export class Structurizer {
         this._ruleFile = value;
     }
 
+    private set rules(value: RuleSet) {
+        this._rules = value;
+    }
+
     get rules() {
         this._rules ??= RuleSet.fromFile(this._ruleFile);
         return this._rules!;
@@ -124,43 +133,44 @@ export class Structurizer {
      * @param inputFiles The list of input files to process.
      * @returns A promise that resolves to an array of validation responses.
      */
-    async processFiles(inputFiles: string[]): Promise<ValidationResponse[]> {
+    async processFiles(inputFiles: string[]): Promise<ValidationResult[]> {
         return await Promise.all(
             inputFiles.map(async file => {
                 try {
-                    return this.processEntries(
-                        await this.getInputAdapterFactory(file)()
-                            .parseFile(file)
-                    )
+                    const records = await this.getInputAdapterFactory(file)()
+                        .parseFile(file);
+                    return this.processRecords(records, file);
                 } catch (error) {
                     return {
+                        filename: file,
                         success: false,
                         errors: [(error instanceof Error ? error.message : String(error))],
                         step: "Parsing"
-                    } satisfies FailedValidationResponse;
+                    } satisfies FailedValidationResult;
                 }
             })
         );
     }
 
     /**
-     * Processes a single file's entries and returns a validation response.
+     * Processes a single file's records and returns a validation response.
      * 
-     * @param entries The parsed input entries from the file.
+     * @param records The parsed input records from the file.
      * @returns A validation response indicating success and the output.
      */
-    processEntries(entries: InputEntry[]): ValidationResponse {
-        const validationResults = this.rules.validate(entries);
+    processRecords(records: InputRecord[], filename: string): ValidationResult {
+        const validationResults = this.rules.validate(records);
 
         const success = validationResults.every(result => result.valid);
 
         return {
+            filename: filename,
             success: success as true,
             output: validationResults,
             stats: {
-                totalEntries: validationResults.length,
-                validEntries: validationResults.filter(result => result.valid).length,
-                invalidEntries: validationResults.filter(result => !result.valid).length
+                total: validationResults.length,
+                valid: validationResults.filter(result => result.valid).length,
+                invalid: validationResults.filter(result => !result.valid).length
             },
             step: "Validation"
         };
@@ -178,7 +188,7 @@ export class Structurizer {
      * @param ruleFile The rule file to use for validation.
      * @returns A promise that resolves to an array of validation responses.
      */
-    static async run({ inputFiles, inputFormat, ruleFile }: StructurizerRunOptions): Promise<ValidationResponse[]> {
+    static async run({ inputFiles, inputFormat, ruleFile }: StructurizerRunOptions): Promise<ValidationResult[]> {
         const app = new Structurizer();
         app.inputFormat = inputFormat ?? app.inputFormat;
         app.ruleFile = ruleFile ?? app.ruleFile;

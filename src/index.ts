@@ -1,4 +1,5 @@
 import { Structurizer, StructurizerRunOptions } from "./app";
+import { consoleReport } from "./report/reporter";
 
 const args = process.argv.slice(2);
 
@@ -50,7 +51,7 @@ if (args.length === 0 || args.includes("--help") || args.includes("-h") || args.
 
     Structurizer.run(options)
         .then(responses => {
-            console.log(responses);
+            console.log(consoleReport(responses));
             if (options.outputFile) {
                 const fs = require("fs");
                 fs.writeFileSync(options.outputFile, JSON.stringify(responses, null, 2));
