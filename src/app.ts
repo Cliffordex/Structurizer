@@ -104,18 +104,18 @@ export class Structurizer {
 
     //#region Methods
 
-    private getInputAdapter(fileName: string): InputAdapter {
+    private getInputAdapterFactory(fileName: string): () => InputAdapter {
         if (this.inputFormat == "auto") {
             const ext = fileName.split('.').pop()?.toLowerCase();
             if (!ext) {
                 throw new Error(`Unable to determine file extension for file: ${fileName}`);
             }
-            return new InputAdapters[autoDetect(ext)]();
+            return InputAdapters[autoDetect(ext)];
         }
         if (!InputAdapters.hasOwnProperty(this.inputFormat)) {
             throw new Error(`Unsupported input format: ${this.inputFormat}`);
         }
-        return new InputAdapters[this.inputFormat]();
+        return InputAdapters[this.inputFormat];
     }
 
     /**
@@ -129,7 +129,7 @@ export class Structurizer {
             inputFiles.map(async file => {
                 try {
                     return this.processEntries(
-                        await this.getInputAdapter(file)
+                        await this.getInputAdapterFactory(file)()
                             .parseFile(file)
                     )
                 } catch (error) {

@@ -3,10 +3,16 @@ import { Readable } from "stream";
 import { InputAdapter, InputEntry } from "./inputadapter";
 
 export class CsvAdapter extends InputAdapter {
+    constructor(options?: { delimiter?: string }) {
+        super();
+        this.options = options || {};
+    }
+    private options: { delimiter?: string };
+
     async parseStream<T = Record<string, any>>(stream: Readable, fileName: string = "stream"): Promise<InputEntry<T>[]> {
         return new Promise((resolve, reject) => {
             const entries: InputEntry<T>[] = [];
-            const parser = stream.pipe(parse({ columns: true }));
+            const parser = stream.pipe(parse({ columns: true, delimiter: this.options.delimiter }));
             parser.on("data", (row) => {
                 entries.push({ fields: row, filePosition: `${fileName}:${parser.info.lines} (entry ${entries.length + 1})` });
             });

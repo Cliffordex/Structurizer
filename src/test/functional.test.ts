@@ -1,3 +1,5 @@
+import { describe, it } from 'bun:test';
+
 // Convert into consistent internal record representation
 // Call them records, not entries
 // Parse YAML validation rules
@@ -20,3 +22,11 @@
 // Later milestone
 // Return consistent backend-independent validation results
 // Support additional validation backends
+
+describe('Functional Tests', () => {
+    it('validates identical csv and json records', () => {
+        const csv = 'name,age\nAlice,30\nBob,25';
+        const json = '[{"name":"Alice","age":30},{"name":"Bob","age":25}]';
+        
+    });
+});
