@@ -23,14 +23,4 @@ export class JSONAdapter extends InputAdapter {
             };
         }
     }
-
-    parse(stream: Readable, fileName: string = "stream"): Promise<{ fields: any; filePosition: string }[]> {
-        const records: { fields: any; filePosition: string }[] = [];
-        return (async () => {
-            for await (const record of this.parseAwaitableStream(stream, fileName)) {
-                records.push(record);
-            }
-            return records;
-        })();
-    }
 }
