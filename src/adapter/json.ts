@@ -16,10 +16,23 @@ export class JSONAdapter extends InputAdapter {
         if (tree?.type !== "array") {
             throw new Error(`Expected JSON array in ${fileName}, but found ${typeof tree?.value}`);
         }
+        let currentOffset = 0;
+        let line = 1;
         for (const [index, child] of (tree.children ?? []).entries()) {
+            if (child.offset !== undefined) {
+                while (currentOffset < child.offset) {
+                    if (content[currentOffset] === "\r") {
+                        line++;
+                        if (content[currentOffset + 1] === "\n") currentOffset++;
+                    } else if (content[currentOffset] === "\n") {
+                        line++;
+                    }
+                    currentOffset++;
+                }
+            }
             yield {
                 fields: getNodeValue(child),
-                filePosition: `${fileName}:` + (child.offset ?? `invalid`) + ` (record ${index + 1})`
+                filePosition: `${fileName}:` + (child.offset === undefined ? `invalid` : line) + ` (record ${index + 1})`
             };
         }
     }
