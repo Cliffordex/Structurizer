@@ -4,6 +4,13 @@ import { InputAdapters } from "../../adapter";
 import { Structurizer } from "../../app";
 import { RuleSet } from "../ruleset";
 
+describe('RuleSet', () => {
+    it("should create a RuleSet from a given filename", () => {
+        const rules = RuleSet.fromFile("example/referral.rules.yaml");
+        expect(rules).toBeDefined();
+    });
+});
+
 describe('RuleSet - Parsing', () => {
 
     // Validate rule config and reject invalid or unknown properties
@@ -93,7 +100,7 @@ describe('RuleSet - Validation', () => {
 
     it('reports an error and marks the record as invalid for missing required fields', () => {
         const ruleSet = RuleSet.fromYamlString(`fields:\n  name:\n    type: string\n    required: true\n`, "test string");
-        const result = ruleSet.validateRecord({ fields: { }, filePosition: "test.csv:1" });
+        const result = ruleSet.validateRecord({ fields: {}, filePosition: "test.csv:1" });
 
         expect(result.valid).toBe(false);
         expect(result.errors).toHaveLength(1);

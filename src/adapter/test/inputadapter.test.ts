@@ -1,9 +1,27 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, spyOn } from "bun:test";
 import { Readable } from "stream";
 import { InputAdapters } from "..";
 import { Structurizer } from "../../app";
 import { CsvAdapter } from "../csv";
 import { JSONAdapter } from "../json";
+
+describe("InputAdapters", () => {
+    describe("async file parsing", () => {
+        it("should convert the file to a stream and run the stream parser on it", async () => {
+            const csvParser = InputAdapters.csv();
+            const err = new Error("mock error");
+            const spy = spyOn(csvParser, "parseAwaitableStream").mockImplementation((a, b) => { throw err; });
+            const records = [];
+            try{
+                await csvParser.parseFileAsync('test.csv');
+            } catch (e) {
+                expect(e).toBe(err);
+            }
+            expect(spy).toHaveBeenCalledTimes(1);
+            spy.mockRestore();
+        });
+    });
+});
 
 describe("InputAdapters - Formats", () => {
     // Convert into consistent internal record representation
@@ -35,6 +53,11 @@ describe("InputAdapters - Auto", () => {
         const adapter = s["getInputAdapterFactory"]("file.json")();
         expect(adapter).toBeDefined();
         expect(adapter).toBeInstanceOf(JSONAdapter);
+    });
+
+    it("should reject unknown file extensions", () => {
+        const s = new Structurizer();
+        expect(() => s["getInputAdapterFactory"]("file.unknown")()).toThrow();
     });
 });
 
