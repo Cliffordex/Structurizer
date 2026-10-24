@@ -5,52 +5,44 @@
 [![Bun](https://img.shields.io/badge/runtime-Bun%201.4%2B-f9f1e1)](https://bun.sh/)  
 [![GitHub Release](https://img.shields.io/github/v/release/:user/:repo)](https://github.com/Cliffordex/Structurizer/releases)
 
-Structurizer is a TypeScript command-line tool for parsing records from CSV, TSV, and JSON files and validating them against a YAML rules file. It reports record-level validation errors with source locations and can write the complete results as JSON.
+Structurizer is a TypeScript validation engine for parsing CSV, TSV, and JSON records against YAML rules. Embed it in your import service, API, or worker to receive valid and invalid records with source locations.
 
 ## Requirements
 
 - [Bun](https://bun.sh/) 1.4 or later
 
-## Get started
+## Integrate with your software
 
-Install the project dependencies:
+Use Structurizer in-process from a TypeScript application: configure the input and rule paths, receive valid and invalid records through callbacks, and decide whether to persist, reject, or route each record. Your software owns the workflow; Structurizer supplies parsing and validation.
 
-```sh
-bun install
+The current repository exposes this API from source modules rather than a dedicated package entry point, so pin the revision when consuming it directly.
+
+```ts
+import { Structurizer } from "../Structurizer/src/app";
+
+const validRecords = [];
+const invalidRecords = [];
+
+const summaries = await Structurizer.runCallback(
+  {
+    inputFiles: ["jobs/42/upload.csv"],
+    inputFormat: "auto",
+    ruleFile: "config/customer.rules.yaml"
+  },
+  {
+    valid: (record) => validRecords.push(record),
+    invalid: (record) => invalidRecords.push(record)
+  }
+);
+
+if (invalidRecords.length > 0 || summaries.some((file) => !file.success)) {
+  throw new Error("Import rejected; inspect the validation results.");
+}
+
+await saveCustomers(validRecords);
 ```
 
-Validate the included CSV example with its rules:
-
-```sh
-bun run src/index.ts --rule example/referral.rules.yaml --output results.json example/referrals.csv
-```
-
-The command prints a summary to the console and writes detailed results to `results.json`. The example rules file includes `date`, `phone`, and `email` type labels, but the current validator only has special handling for `string` and `number`; other type labels are treated as strings. See [Rules](#rules) for the implemented behavior.
-
-## Usage
-
-```text
-bun run src/index.ts [options] <input_file> [<input_file>...]
-```
-
-| Option | Description |
-| --- | --- |
-| `-h`, `--help` | Show usage information. |
-| `-f`, `--in-format <format>` | Input format: `csv`, `tsv`, `json`, or `auto`. Defaults to `auto`, which selects by file extension. |
-| `-r`, `--rule <file>` | YAML validation rules file. Defaults to `rules.yaml` in the current directory. |
-| `-o`, `--output <file>` | Write the detailed result array as formatted JSON. |
-| `-p`, `--report <file>` | Write a self-contained, styled HTML validation report. |
-
-You can pass multiple input files; each result is included in the console summary and JSON output. With auto-detection, supported extensions are `.csv`, `.tsv`, and `.json`.
-
-CSV and TSV files must have a header row. JSON input must be an array of records, for example:
-
-```json
-[
-  { "name": "Ada", "age": "36" },
-  { "name": "Grace", "age": "40" }
-]
-```
+If you want to build and run Structurizer as a command-line executable instead, see [Standalone use](./docs/STANDALONE.md).
 
 ## Rules
 
@@ -74,32 +66,22 @@ fields:
 
 The current validator does not provide special date, email, or phone validation. For now, declare such fields as `type: string` if string validation is sufficient.
 
-## Results
+## Validation results
 
-The console summary reports success, record totals, and parsing or validation errors for each file. With `--output`, Structurizer writes a JSON array containing one result per input file. With `--report`, it creates a responsive HTML report with aggregate counts, file statuses, and validation issues:
+The `valid` callback receives converted, validated records. The `invalid` callback receives failed records with their source positions and messages. The returned file summaries report file-level parsing or rule-loading errors.
 
-- Successfully parsed files include each record's validity, data, source position, and validation errors, along with valid/invalid record counts.
-- A parsing failure includes the file name, parsing error, and the processing step.
+Validation failures do not stop other records or files from being processed. Your application decides whether a partial result is acceptable; many import workflows reject the entire job when any invalid record or failed file is present.
 
-Validation failures do not prevent other records or input files from being processed.
+## Deployment notes
 
-## Development
-
-Run the test suite:
-
-```sh
-bun test
-```
-
-Build a standalone executable:
-
-```sh
-bun run build
-```
+- For HTTP uploads, save the request body to a job directory and pass that path to Structurizer. Select the rule file from trusted application configuration rather than a user-controlled path.
+- For queues and batch jobs, give every job its own input and result directory so concurrent work cannot overwrite files and retries remain easy to audit.
+- Test your rules in CI with representative valid and invalid data, and log the Structurizer revision, rule revision, source file name, and validation totals.
+- Treat stored validation errors and application logs as sensitive when input data may contain personal or confidential information.
 
 ## Current limitations
 
-- Input records are collected before validation; the current implementation is not a bounded-memory streaming pipeline. JSON files are read fully into memory.
+- JSON files are read fully into memory before validation, so JSON input is not suitable for large files or unbounded streams. CSV and TSV can be processed record by record.
 - Nested schemas, data normalization/transforms, and specialized date/email/phone validation are not currently implemented.
 
 See [ROADMAP.md](./ROADMAP.md) for planned scope and milestones.
