@@ -2,6 +2,9 @@ import { getNodeValue, parseTree } from "jsonc-parser";
 import { Readable } from "stream";
 import { InputAdapter } from "./inputadapter";
 
+// Actually streaming records would require handwriting a new parser, which is outside of the scope of this project.
+// Therefore, this adapter reads the entire stream into memory before parsing it as a JSON array.
+
 export class JSONAdapter extends InputAdapter {
     async *parseAwaitableStream(stream: Readable, fileName: string = "stream"): AsyncGenerator<{ fields: any; filePosition: string }, void, unknown> {
         const chunks: Buffer[] = [];

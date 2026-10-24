@@ -17,14 +17,4 @@ export class CsvAdapter extends InputAdapter {
             yield record;
         }
     }
-
-    parse<T = Record<string, any>>(stream: Readable, fileName: string = "stream"): InputRecord<T>[] {
-        const records: InputRecord<T>[] = [];
-        const parser = stream.pipe(parse({ columns: true, delimiter: this.options.delimiter }));
-        parser.on("data", (row) => {
-            const record = { fields: row, filePosition: `${fileName}:${parser.info.lines} (record ${parser.info.records + 1})` };
-            records.push(record);
-        });
-        return records;
-    }
 }
