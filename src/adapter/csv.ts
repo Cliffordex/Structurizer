@@ -1,18 +1,30 @@
-import { InputAdapter, InputEntry } from "./inputadapter";
 import { parse } from "csv-parse";
-import { createReadStream } from "fs";
 import { Readable } from "stream";
+import { InputAdapter, InputRecord } from "./inputadapter";
 
 export class CsvAdapter extends InputAdapter {
-    async parseStream<T = Record<string, any>>(stream: Readable, fileName: string = "stream"): Promise<InputEntry<T>[]> {
-        return new Promise((resolve, reject) => {
-            const entries: InputEntry<T>[] = [];
-            const parser = stream.pipe(parse({ columns: true }));
-            parser.on("data", (row) => {
-                entries.push({ fields: row, filePosition: `${fileName}:${parser.info.lines} (entry ${entries.length + 1})` });
-            });
-            parser.on("end", () => resolve(entries));
-            parser.on("error", (err) => reject(err));
+
+    constructor(options?: { delimiter?: string }) {
+        super();
+        this.options = options || {};
+    }
+    private options: { delimiter?: string };
+
+    async *parseAwaitableStream<T = Record<string, any>>(stream: Readable, fileName?: string): AsyncGenerator<InputRecord<T>, void, unknown> {
+        const parser = stream.pipe(parse({ columns: true, delimiter: this.options.delimiter }));
+        for await (const row of parser) {
+            const record = { fields: row, filePosition: `${fileName}:${parser.info.lines} (record ${parser.info.records + 1})` };
+            yield record;
+        }
+    }
+
+    parse<T = Record<string, any>>(stream: Readable, fileName: string = "stream"): InputRecord<T>[] {
+        const records: InputRecord<T>[] = [];
+        const parser = stream.pipe(parse({ columns: true, delimiter: this.options.delimiter }));
+        parser.on("data", (row) => {
+            const record = { fields: row, filePosition: `${fileName}:${parser.info.lines} (record ${parser.info.records + 1})` };
+            records.push(record);
         });
+        return records;
     }
 }

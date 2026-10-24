@@ -1,4 +1,5 @@
 nameFirst,nameLast,birthday,signupDate,referredBy,phone,email
 ,,01-01-1990,10-20-3040,web,1,jdoe@jdoesplace.com
 J,,01-01-1990,10-20-3040,web,1,jdoe@jdoesplace.com
+John,Doe,01-01-1990,10-20-3040,web,1,invalidemail
 Actulee,Gooddata,08-05-2012,10-21-2026,word,702-555-1234,agooddata@protoso.net

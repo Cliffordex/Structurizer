@@ -1,6 +1,6 @@
 import { autoDetect, InputAdapters } from "./adapter";
-import { InputAdapter, InputEntry } from "./adapter/inputadapter";
-import { RuleSet } from "./validationrules/ruleset";
+import { InputAdapter, InputRecord } from "./adapter/inputadapter";
+import { RuleSet, RulesetResponse } from "./validationrules/ruleset";
 
 export type StructurizerRunOptions = {
     inputFiles: string[];
@@ -8,7 +8,17 @@ export type StructurizerRunOptions = {
     ruleFile: string;
 };
 
-type BaseValidationResponse = {
+export type ValidationResult = {
+    /**
+     * Indicates if the validation process was successful.
+     */
+    success: boolean;
+
+    /**
+     * The name of the file being validated.
+     */
+    filename: string;
+
     /**
     * The statistics of the validation process.
     * 
@@ -16,21 +26,28 @@ type BaseValidationResponse = {
     */
     stats?: {
         /**
-         * The total number of entries processed.
+         * The total number of records processed.
          */
-        totalEntries: number;
+        total: number;
         /**
-         * The number of valid entries.
+         * The number of valid records.
          */
-        validEntries: number;
+        valid: number;
         /**
-         * The number of entries which failed validation and have no valid data.
+         * The number of records which failed validation and have no valid data.
          */
-        invalidEntries: number;
+        invalid: number;
     };
 
     /**
-     * The validation errors for this entry.
+     * The output of the validation process.
+     * 
+     * This may be casted to the output type specified by the rule file contract.
+     */
+    output?: object;
+
+    /**
+     * The validation errors for this record.
      */
     errors?: string[];
 
@@ -39,29 +56,6 @@ type BaseValidationResponse = {
      */
     step: string;
 }
-
-type SuccessfulValidationResponse = {
-    /**
-     * Indicates if any of the validation steps were successful.
-     */
-    success: true;
-    /**
-     * The output of the validation process.
-     * 
-     * This may be casted to the output type specified by the rule file contract.
-     */
-    output: object;
-} & BaseValidationResponse;
-type FailedValidationResponse = {
-    /**
-     * Indicates that the validation process failed.
-     */
-    success: false;
-
-    errors: string[];
-} & BaseValidationResponse;
-
-export type ValidationResponse = SuccessfulValidationResponse | FailedValidationResponse;
 
 export class Structurizer {
 
@@ -95,6 +89,10 @@ export class Structurizer {
         this._ruleFile = value;
     }
 
+    private set rules(value: RuleSet) {
+        this._rules = value;
+    }
+
     get rules() {
         this._rules ??= RuleSet.fromFile(this._ruleFile);
         return this._rules!;
@@ -104,66 +102,108 @@ export class Structurizer {
 
     //#region Methods
 
-    private getInputAdapter(fileName: string): InputAdapter {
+    private getInputAdapterFactory(fileName: string): () => InputAdapter {
         if (this.inputFormat == "auto") {
             const ext = fileName.split('.').pop()?.toLowerCase();
             if (!ext) {
                 throw new Error(`Unable to determine file extension for file: ${fileName}`);
             }
-            return new InputAdapters[autoDetect(ext)]();
+            return InputAdapters[autoDetect(ext)];
         }
         if (!InputAdapters.hasOwnProperty(this.inputFormat)) {
             throw new Error(`Unsupported input format: ${this.inputFormat}`);
         }
-        return new InputAdapters[this.inputFormat]();
+        return InputAdapters[this.inputFormat];
+    }
+
+    private _inputAdapters: { [key: string]: InputAdapter } = {};
+
+    private getInputAdapter(fileName: string): InputAdapter {
+        if (!this._inputAdapters[fileName]) {
+            const factory = this.getInputAdapterFactory(fileName);
+            this._inputAdapters[fileName] = factory();
+        }
+        return this._inputAdapters[fileName];
     }
 
     /**
-     * Processes multiple input files and returns an array of validation responses.
+     * Processes a single file and iterates over its records, yielding validation responses.
      * 
-     * @param inputFiles The list of input files to process.
-     * @returns A promise that resolves to an array of validation responses.
+     * @param file The input file to process.
+     * @returns An async generator yielding validation responses for each record and the final validation result.
      */
-    async processFiles(inputFiles: string[]): Promise<ValidationResponse[]> {
-        return await Promise.all(
-            inputFiles.map(async file => {
-                try {
-                    return this.processEntries(
-                        await this.getInputAdapter(file)
-                            .parseFile(file)
-                    )
-                } catch (error) {
-                    return {
-                        success: false,
-                        errors: [(error instanceof Error ? error.message : String(error))],
-                        step: "Parsing"
-                    } satisfies FailedValidationResponse;
+    private async* processFileIterateRecords(file: string): AsyncGenerator<RulesetResponse<Record<string, any>>, ValidationResult, unknown> {
+        try {
+            const adapter = this.getInputAdapter(file);
+            const recordsFromFile = await adapter.parseFileAsync(file);
+            const stats = {
+                total: 0,
+                valid: 0,
+                invalid: 0
+            };
+
+            for await (const record of recordsFromFile) {
+                const response = this.processRecord(record);
+                stats.total++;
+                if (response.valid) {
+                    stats.valid++;
+                } else {
+                    stats.invalid++;
                 }
-            })
-        );
+                yield response;
+            }
+
+            return {
+                filename: file,
+                success: stats.invalid === 0,
+                stats,
+                step: "Validation"
+            } satisfies ValidationResult;
+        } catch (error) {
+            return {
+                filename: file,
+                success: false,
+                errors: [error instanceof Error ? error.message : String(error)],
+                step: "Validation"
+            } satisfies ValidationResult;
+        }
+    }
+
+    private async* processFilesIterateRecords(files: string[]): AsyncGenerator<RulesetResponse<Record<string, any>>, ValidationResult[], unknown> {
+        const results: ValidationResult[] = [];
+        for (const file of files) {
+            const result = yield* this.processFileIterateRecords(file);
+            results.push(result);
+        }
+        return results;
     }
 
     /**
-     * Processes a single file's entries and returns a validation response.
+     * Processes a single file's records and returns a validation response.
      * 
-     * @param entries The parsed input entries from the file.
+     * @param records The parsed input records from the file.
      * @returns A validation response indicating success and the output.
      */
-    processEntries(entries: InputEntry[]): ValidationResponse {
-        const validationResults = this.rules.validate(entries);
+    processRecords(records: InputRecord[], filename: string): ValidationResult {
+        const validationResults = this.rules.validateRecords(records);
 
         const success = validationResults.every(result => result.valid);
 
         return {
+            filename: filename,
             success: success as true,
             output: validationResults,
             stats: {
-                totalEntries: validationResults.length,
-                validEntries: validationResults.filter(result => result.valid).length,
-                invalidEntries: validationResults.filter(result => !result.valid).length
+                total: validationResults.length,
+                valid: validationResults.filter(result => result.valid).length,
+                invalid: validationResults.filter(result => !result.valid).length
             },
             step: "Validation"
         };
+    }
+
+    processRecord(record: InputRecord) {
+        return this.rules.validateRecord(record);
     }
 
     //#endregion
@@ -178,12 +218,35 @@ export class Structurizer {
      * @param ruleFile The rule file to use for validation.
      * @returns A promise that resolves to an array of validation responses.
      */
-    static async run({ inputFiles, inputFormat, ruleFile }: StructurizerRunOptions): Promise<ValidationResponse[]> {
+    static async runCallback({
+        inputFiles,
+        inputFormat,
+        ruleFile
+    }: StructurizerRunOptions,
+        {
+            valid,
+            invalid
+        }: {
+            valid: (entry: RulesetResponse) => void,
+            invalid?: (entry: RulesetResponse) => void
+        }
+    ): Promise<ValidationResult[]> {
         const app = new Structurizer();
         app.inputFormat = inputFormat ?? app.inputFormat;
         app.ruleFile = ruleFile ?? app.ruleFile;
 
-        return await app.processFiles(inputFiles);
+        const results = app.processFilesIterateRecords(inputFiles);
+        while (true) {
+            const { value, done } = await results.next();
+            if (done) {
+                return value;
+            }
+            if (value.valid) {
+                valid(value);
+            } else if (invalid) {
+                invalid(value);
+            }
+        }
     }
 
     //#endregion

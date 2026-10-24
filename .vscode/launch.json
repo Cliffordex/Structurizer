@@ -11,6 +11,8 @@
         "example/referral.rules.yaml",
         "-o",
         "example/output.json",
+        "-p",
+        "example/report.html",
         "example/referrals.csv",
         "example/referrals_missingfields.csv",
         "example/referrals_missingreqd.csv",

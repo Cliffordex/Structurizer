@@ -1,3 +1,3 @@
-nameFirst,nameLast,birthday,signupDate,referredBy,phone,email
-John,Doe,01-01-1990,10-20-3040,web,323-867-8309,john.doe@aol.net
-Testy,Tester,12-30-1234,11-22-2033,influencer,1-223-556-4570,testthis@example.com
+nameFirst,nameLast,birthday,signupDate,referredBy,phone,email,pin
+John,Doe,01-01-1990,10-20-3040,web,323-867-8309,john.doe@aol.net,4
+Testy,Tester,12-30-1234,11-22-2033,influencer,1-223-556-4570,testthis@example.com,7

@@ -1,6 +1,6 @@
 import { parse } from 'yaml';
 import * as z from 'zod';
-import { InputEntry } from '../adapter/inputadapter';
+import { InputRecord } from '../adapter/inputadapter';
 
 export const fieldSchema = z.object({
     type: z.string(),
@@ -18,16 +18,16 @@ export const ruleSchema = z.object({
 
 export type RulesetResponse<T = Record<string, any>> = {
     valid: boolean;
-    errors: string[];
+    errors?: string[];
     data: T;
     filePosition: string;
 };
 
 export class RuleSet {
-    private _builtEntrySchema: z.ZodObject<any>;
+    private _builtRecordSchema: z.ZodObject<any>;
 
     private constructor(private rules: z.infer<typeof ruleSchema>) {
-        this._builtEntrySchema = z.object(
+        this._builtRecordSchema = z.object(
             Object.fromEntries(
                 Object.entries(this.rules.fields).map(([key, field]) => {
                     let schema: z.ZodType = z.string();
@@ -41,7 +41,11 @@ export class RuleSet {
                         let numberSchema = z.number();
                         if (field.min !== undefined) numberSchema = numberSchema.min(field.min);
                         if (field.max !== undefined) numberSchema = numberSchema.max(field.max);
-                        schema = numberSchema;
+                        schema = z.union([
+                            numberSchema,
+                            // Allow strings that can be converted to numbers
+                            z.string().trim().min(1).transform(Number).pipe(numberSchema)
+                        ]);
                     }
                     if (field.required === false) schema = schema.optional();
                     return [key, schema];
@@ -50,13 +54,13 @@ export class RuleSet {
         );
     }
 
-    validate(data: InputEntry[]) {
-        return data.map(entry => this.validateEntry(entry));
+    validateRecords(data: InputRecord[]) {
+        return data.map(r => this.validateRecord(r));
     }
 
-    validateEntry<T>(data: InputEntry<T>): RulesetResponse<T> {
+    validateRecord<T>(data: InputRecord<T>): RulesetResponse<T> {
         const errors: string[] = [];
-        const result = this._builtEntrySchema.safeParse(data.fields);
+        const result = this._builtRecordSchema.safeParse(data.fields);
         if (!result.success) {
             for (const issue of result.error.issues) {
                 errors.push(`${data.filePosition} \"${issue.path.join('.')}\" failed validation. ${issue.message}`);
@@ -64,8 +68,8 @@ export class RuleSet {
         }
         return {
             valid: result.success,
-            errors,
-            data: data.fields,
+            errors: errors.length > 0 ? errors : undefined,
+            data: result.success ? result.data as T : data.fields,
             filePosition: data.filePosition
         };
     }

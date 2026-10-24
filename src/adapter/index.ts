@@ -1,5 +1,5 @@
-import { InputAdapter } from "./inputadapter";
 import { CsvAdapter } from "./csv";
+import { InputAdapter } from "./inputadapter";
 import { JSONAdapter } from "./json";
 
 // The registry keeps adapter selection in one place, but requires each adapter
@@ -9,9 +9,10 @@ import { JSONAdapter } from "./json";
 /**
  * A registry of available input adapters keyed by their file extension.
  */
-export const InputAdapters: Record<string, new () => InputAdapter> = {
-    "csv": CsvAdapter,
-    "json": JSONAdapter
+export const InputAdapters: Record<string, () => InputAdapter> = {
+    "csv": () => new CsvAdapter(),
+    "tsv": () => new CsvAdapter({ delimiter: '\t' }),
+    "json": () => new JSONAdapter()
 };
 
 /**

@@ -1,4 +1,17 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
+
+describe("CLI", () => {
+    it("should present a CLI for file validation", () => {
+        const result = Bun.spawnSync(["bun", "run", "src/index.ts"]);
+        expect(result.stdout.toString()).toContain("Usage");
+    });
+
+    it("should print a report after processing an input file", async () => {
+        const result = Bun.spawnSync(["bun", "run", "src/index.ts", "example/referrals.csv"]);
+        expect(result.stdout.toString()).toContain("File: example/referrals.csv");
+        expect(result.stdout.toString()).toContain("Success:");
+    });
+});
 
 describe("CLI Help", () => {
     it("should display help information when no arguments are provided", () => {
