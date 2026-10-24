@@ -1,9 +1,9 @@
 # Structurizer
 
 [![License](https://img.shields.io/github/license/Cliffordex/Structurizer)](./LICENSE)
+[![Bun](https://img.shields.io/badge/runtime-Bun%201.4%2B-f9f1e1)](https://bun.sh/)
+[![GitHub Release](https://img.shields.io/github/v/release/Cliffordex/Structurizer)](https://github.com/Cliffordex/Structurizer/releases)
 [![GitHub stars](https://img.shields.io/github/stars/Cliffordex/Structurizer)](https://github.com/Cliffordex/Structurizer/stargazers)
-[![Bun](https://img.shields.io/badge/runtime-Bun%201.4%2B-f9f1e1)](https://bun.sh/)  
-[![GitHub Release](https://img.shields.io/github/v/release/:user/:repo)](https://github.com/Cliffordex/Structurizer/releases)
 
 Structurizer is a TypeScript validation engine for parsing CSV, TSV, and JSON records against YAML rules. Embed it in your import service, API, or worker to receive valid and invalid records with source locations.
 
