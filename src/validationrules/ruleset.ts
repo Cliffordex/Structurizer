@@ -54,7 +54,7 @@ export class RuleSet {
         );
     }
 
-    validate(data: InputRecord[]) {
+    validateRecords(data: InputRecord[]) {
         return data.map(r => this.validateRecord(r));
     }
 

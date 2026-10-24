@@ -1,5 +1,6 @@
 import { Structurizer, StructurizerRunOptions } from "./app";
-import { consoleReport } from "./report/reporter";
+import { consoleReport, htmlReport } from "./report/reporter";
+import { RulesetResponse } from "./validationrules/ruleset";
 
 const args = process.argv.slice(2);
 
@@ -49,12 +50,23 @@ if (args.length === 0 || args.includes("--help") || args.includes("-h") || args.
         process.exit(1);
     }
 
-    Structurizer.run(options)
-        .then(responses => {
-            console.log(consoleReport(responses));
-            if (options.outputFile) {
-                const fs = require("fs");
-                fs.writeFileSync(options.outputFile, JSON.stringify(responses, null, 2));
-            }
+    const validEntries: RulesetResponse[] = [];
+
+    (async () => {
+        const responses = await Structurizer.runCallback(options, {
+            valid: (entry) => { validEntries.push(entry); }
         });
+        console.log(consoleReport(responses));
+        if (options.outputFile) {
+            const fs = require("fs");
+            fs.writeFileSync(options.outputFile, JSON.stringify(validEntries, null, 2));
+        }
+        if (options.reportFile) {
+            const fs = require("fs");
+            fs.writeFileSync(options.reportFile, htmlReport(responses));
+        }
+    })().catch(err => {
+        console.error(err);
+        process.exit(1);
+    });
 }

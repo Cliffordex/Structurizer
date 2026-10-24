@@ -48,7 +48,10 @@ describe('RuleSet - Validation', () => {
     it('implicitly coerces csv numeric strings to numbers when rules specify numeric type', async () => {
         const csv = 'name,age\nAlice,30\nBob,25';
         const csvParser = InputAdapters.csv();
-        const csvRecords = await csvParser.parseStream(Readable.from([csv]), 'test.csv');
+        const csvRecords = [];
+        for await (const record of csvParser.parseAwaitableStream(Readable.from([csv]), 'test.csv')) {
+            csvRecords.push(record);
+        }
         expect(csvRecords[0].fields.age).toEqual("30");
         expect(csvRecords[1].fields.age).toEqual("25");
         const s = new Structurizer();
