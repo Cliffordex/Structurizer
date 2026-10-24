@@ -1,20 +1,16 @@
 # Structurizer
 
 [![License](https://img.shields.io/github/license/Cliffordex/Structurizer)](./LICENSE)
-[![Bun](https://img.shields.io/badge/runtime-Bun%201.4%2B-f9f1e1)](https://bun.sh/)
+[![Bun](https://img.shields.io/badge/tests-Bun%201.4%2B-f9f1e1)](https://bun.sh/)
 [![GitHub Issues by label](https://img.shields.io/github/issues/Cliffordex/Structurizer/bug)](https://github.com/Cliffordex/Structurizer/issues)
 [![GitHub Release](https://img.shields.io/github/v/release/Cliffordex/Structurizer)](https://github.com/Cliffordex/Structurizer/releases)
 [![GitHub stars](https://img.shields.io/github/stars/Cliffordex/Structurizer)](https://github.com/Cliffordex/Structurizer/stargazers)
 
 Structurizer is a TypeScript validation engine for parsing CSV, TSV, and JSON records against YAML rules. Embed it in your import service, API, or worker to receive valid and invalid records with source locations.
 
-## Requirements
-
-- [Bun](https://bun.sh/) 1.4 or later
-
 ## Integrate with your software
 
-Use Structurizer in-process from a TypeScript application: configure the input and rule paths, receive valid and invalid records through callbacks, and decide whether to persist, reject, or route each record. Your software owns the workflow; Structurizer supplies parsing and validation.
+Use Structurizer in-process from a TypeScript application: configure the input and rule paths, receive valid and invalid records through callbacks, and decide whether to persist, reject, or route each record. Your software owns the workflow; Structurizer supplies parsing and validation, regardless of the JavaScript engine your application uses.
 
 The current repository exposes this API from source modules rather than a dedicated package entry point, so pin the revision when consuming it directly.
 
@@ -42,6 +38,12 @@ if (invalidRecords.length > 0 || summaries.some((file) => !file.success)) {
 
 await saveCustomers(validRecords);
 ```
+
+## Runtime and tooling
+
+Structurizer can be integrated into software running on any JavaScript or TypeScript engine that supports the Node-style file and stream APIs used by the library. Your application does not need to use Bun.
+
+[Bun](https://bun.sh/) 1.4 or later is required only to run this repository's test suite and to use the optional standalone command-line workflow.
 
 If you want to build and run Structurizer as a command-line executable instead, see [Standalone use](./docs/STANDALONE.md).
 
