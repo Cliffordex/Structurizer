@@ -8,6 +8,10 @@
 
 Structurizer is a TypeScript validation engine for parsing CSV, TSV, and JSON records against YAML rules. Embed it in your import service, API, or worker to receive valid and invalid records with source locations.
 
+## Use your data now
+
+If you want to run Structurizer as a command-line executable right now, see [Standalone use](./docs/STANDALONE.md).
+
 ## Integrate with your software
 
 Use Structurizer in-process from a TypeScript application: configure the input and rule paths, receive valid and invalid records through callbacks, and decide whether to persist, reject, or route each record. Your software owns the workflow; Structurizer supplies parsing and validation, regardless of the JavaScript engine your application uses.
@@ -44,8 +48,6 @@ await saveCustomers(validRecords);
 Structurizer can be integrated into software running on any JavaScript or TypeScript engine that supports the Node-style file and stream APIs used by the library. Your application does not need to use Bun.
 
 [Bun](https://bun.sh/) 1.4 or later is required only to run this repository's test suite and to use the optional standalone command-line workflow.
-
-If you want to build and run Structurizer as a command-line executable instead, see [Standalone use](./docs/STANDALONE.md).
 
 ## Rules
 
