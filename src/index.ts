@@ -53,7 +53,7 @@ if (args.length === 0 || args.includes("--help") || args.includes("-h") || args.
     const validEntries: RulesetResponse[] = [];
 
     (async () => {
-        const responses = await Structurizer.runCallback(options, {
+        const responses = await Structurizer.validateFileCallback(options, {
             valid: (entry) => { validEntries.push(entry); }
         });
         console.log(consoleReport(responses));

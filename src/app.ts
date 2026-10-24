@@ -218,7 +218,7 @@ export class Structurizer {
      * @param ruleFile The rule file to use for validation.
      * @returns A promise that resolves to an array of validation responses.
      */
-    static async runCallback({
+    static async validateFileCallback({
         inputFiles,
         inputFormat,
         ruleFile
